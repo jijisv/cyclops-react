@@ -38,4 +38,6 @@ public interface LazyResultConsumer<T> extends Consumer<FastFuture<T>>{
 	
 
 	public ConfigurableStream<T> getBlocking();
+
+	
 }

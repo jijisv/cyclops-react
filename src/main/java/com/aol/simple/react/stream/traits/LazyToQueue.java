@@ -28,13 +28,13 @@ public interface LazyToQueue<U> extends ToQueue<U> {
 	 */
 	default Queue<U> toQueue() {
 		Queue<U> queue = this.getQueueFactory().build();
-		System.out.println("To queue!");
+		
 		
 		
 		Continuation continuation = thenSync(next->{System.out.println(next);return next;}).thenSync(queue::add)
 										//.peek(System.out::println)
 										.runContinuation(() -> {
-											System.out.println("Closing!");
+										
 			queue.close();
 			
 			});

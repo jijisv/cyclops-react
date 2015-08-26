@@ -74,7 +74,7 @@ public class FastFuture<T> {
 	}
 	
 	public T join(){
-		System.out.println("joining! " + done + " : " + result);
+		
 		long spin=1;
 		while(!done){
 			LockSupport.parkNanos(spin++);
@@ -105,11 +105,11 @@ public class FastFuture<T> {
 	
 	private T completedExceptionally(Throwable t){
 
-		System.out.println("Completed exceptionally!");
+		
 		for(int i =0;i<this.pipeline.firstRecover.length;i++){
 			try{
 				T res =  this.set((T)pipeline.firstRecover[i].apply(t));
-				System.out.println(res);
+				
 				return res;
 			}catch(Throwable e){
 				this.exception =e;
@@ -134,7 +134,7 @@ public class FastFuture<T> {
 	
 	
 	public static <R> FastFuture<List<R>> allOf(FastFuture... futures){
-		System.out.println("All off! " + futures.length);
+		
 		FastFuture allOf = new FastFuture(FinalPipeline.empty(),futures.length);
 		
 		
@@ -165,7 +165,7 @@ public class FastFuture<T> {
 	
 	//Stream.of(values).map(v->fastFutures.next().set(v))
 	public <R> R set(T result){
-		System.out.println("Setting! " + result);
+		
 		return set(()->result);
 	}
 	public <R> R set(Supplier<T> result){
@@ -179,7 +179,7 @@ public class FastFuture<T> {
 			}
 			Function op = pipeline.functions[0];
 			if(this.isFirstAsync){
-				System.out.println("First Async exec with " +  use);
+				
 				this.pipeline.executors[0].execute(()->{
 					set(()->(T)op.apply(use),1);
 				});
@@ -199,17 +199,17 @@ public class FastFuture<T> {
 	}
 	public <R> R set(Supplier<T> result,int index){
 		try{
-			System.out.println("Setting index " + index);
+			
 			Object current = result.get();
 			
 			Function op = pipeline.functions[index];
-			System.out.println("before " + current);
+		
 			current = op.apply(current);
-			System.out.println("after " + current);
+			
 			
 			final Object use = current;
 			if(index+1<pipeline.functions.length){
-					System.out.println("Async exec with " +  use);
+					
 					this.pipeline.executors[index+1].execute(()->{
 						set(()->(T)use,index+1);
 					});
@@ -231,7 +231,7 @@ public class FastFuture<T> {
 		return (R)this.result;
 	}
 	private boolean done(){
-		System.out.println("done!");
+		
 		this.completedExceptionally=false;
 		return this.done =true;
 		
@@ -269,7 +269,7 @@ public class FastFuture<T> {
 	}
 	public  FastFuture<T> peek(Consumer<T> c){
 		if(done){
-			System.out.println("eager peeking!");
+			
 			c.accept((T)result());
 		}
 		this.builder = builder.peek(c);
@@ -277,7 +277,7 @@ public class FastFuture<T> {
 	}
 	public <R> FastFuture<R> thenApply(Function<T,R> fn){
 		
-		System.out.println("then apply " + done + " : " + result);
+		
 		return (FastFuture)this.withBuilder(builder.thenApply(fn));
 	}
 	public <X extends Throwable> FastFuture<T> exceptionally(Function<X,T> fn){

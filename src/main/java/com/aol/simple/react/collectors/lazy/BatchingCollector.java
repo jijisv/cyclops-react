@@ -28,6 +28,7 @@ import com.aol.simple.react.stream.traits.BlockingStream;
 @Builder
 public class BatchingCollector<T> implements LazyResultConsumer<T>{
 
+	
 	@Getter
 	private final Collection<FastFuture<T>> results;
 	private final List<FastFuture<T>> active = new ArrayList<>();
@@ -58,6 +59,10 @@ public class BatchingCollector<T> implements LazyResultConsumer<T>{
 	 */
 	@Override
 	public void accept(FastFuture<T> t) {
+		if(t.isDone()){
+			results.add(t);
+			return;
+		}
 		active.add(t);
 		
 		if(active.size()>maxActive.getMaxActive()){
@@ -98,8 +103,6 @@ public class BatchingCollector<T> implements LazyResultConsumer<T>{
 	public Collection<FastFuture<T>> getAllResults(){
 		results.addAll(active);
 		return results;
-	}
-	 
-	
+	}	
 	
 }

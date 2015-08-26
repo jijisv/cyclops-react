@@ -282,7 +282,7 @@ public interface FutureStream<U> extends Seq<U>,ConfigurableStream<U>,
 	 * @return a Stream that batches all completed elements from this stream since last read attempt into a collection
 	 */
 	default FutureStream<Collection<U>> chunkSinceLastRead(){
-		System.out.println("Chunk!");
+		
 		Queue queue = this.withQueueFactory(QueueFactories.unboundedQueue()).toQueue();
 		Queue.QueueReader reader =  new Queue.QueueReader(queue,null);
 		class Chunker implements Iterator<Collection<U>> {
@@ -305,7 +305,7 @@ public interface FutureStream<U> extends Seq<U>,ConfigurableStream<U>,
 				
 				try {
 					Collection<U> res =  chunker.next();
-					System.out.println("Next is " +res);
+					
 					return res;
 				} catch (ClosedQueueException e) {
 					e.printStackTrace();

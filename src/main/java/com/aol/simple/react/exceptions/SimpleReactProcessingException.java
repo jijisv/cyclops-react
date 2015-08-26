@@ -8,6 +8,11 @@ public class SimpleReactProcessingException extends RuntimeException {
 		
 	}
 
+	@Override
+	public synchronized Throwable fillInStackTrace() {
+		return this;
+	}
+
 	public SimpleReactProcessingException(String message, Throwable cause,
 			boolean enableSuppression, boolean writableStackTrace) {
 		super(message, cause, enableSuppression, writableStackTrace);

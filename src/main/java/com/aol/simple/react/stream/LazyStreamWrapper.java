@@ -41,7 +41,7 @@ public class LazyStreamWrapper implements StreamWrapper{
 	}
 	
 	public Stream<FastFuture> injectFutures(){
-		System.out.println("futures?"+streamCompletableFutures);
+		
 		if(streamCompletableFutures)
 			return convertCompletableFutures();
 		Stream<FastFuture> result = values
@@ -50,7 +50,7 @@ public class LazyStreamWrapper implements StreamWrapper{
 		return result;
 	}
 	private Stream<FastFuture> convertCompletableFutures(){
-		System.out.println("Convert from CompletableFuture");
+		
 		return values.map(cf -> nextFuture().populateFromCompletableFuture( (CompletableFuture)cf));
 	}
 	private FastFuture nextFuture(){

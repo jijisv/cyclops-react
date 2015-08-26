@@ -89,14 +89,15 @@ public interface LazyStream<U> extends BlockingStream<U>{
 
 		
 		Optional<LazyResultConsumer<U>> batcher = collector.supplier().get() != null ? Optional
-				.of(getLazyCollector().withResults( new ArrayList<>())) : Optional.empty();
+				.of(getLazyCollector().withResults(new ArrayList<>())) : Optional.empty();
 
 		try {
-			System.out.println("Last Active!");
+			
 			this.getLastActive().injectFutures().forEach(n -> {
-				System.out.println(n);
+				
 				batcher.ifPresent(c -> c.accept(n));
-				this.getWaitStrategy().accept(n);
+				if(!n.isDone())
+					this.getWaitStrategy().accept(n);
 				
 			});
 		} catch (SimpleReactProcessingException e) {
@@ -104,13 +105,13 @@ public interface LazyStream<U> extends BlockingStream<U>{
 		}
 		if (collector.supplier().get() == null)
 			return null;
+		//move the unwrapping to inside the batcher when results are completed
 		
 		return (R)batcher.get().getAllResults().stream()
 									.map(cf -> BlockingStreamHelper.getSafe(cf,getErrorHandler()))
 									.filter(v -> v != MissingValue.MISSING_VALUE)
 									.collect((Collector)collector);
 		
-
 	}
 	
 	
@@ -199,7 +200,8 @@ public interface LazyStream<U> extends BlockingStream<U>{
 
 				
 				collector.getConsumer().accept(next);
-				this.getWaitStrategy().accept(next);
+				if(!next.isDone())
+					this.getWaitStrategy().accept(next);
 				result[0] = collector.reduce(safeJoin,(T)result[0],accumulator,combiner);	
 			});
 		} catch (SimpleReactProcessingException e) {
@@ -215,7 +217,8 @@ public interface LazyStream<U> extends BlockingStream<U>{
 			this.getLastActive().injectFutures().forEach(n -> {
 
 				batcher.accept(n);
-				this.getWaitStrategy().accept(n);
+				if(!n.isDone())
+					this.getWaitStrategy().accept(n);
 				
 			});
 		} catch (SimpleReactProcessingException e) {
