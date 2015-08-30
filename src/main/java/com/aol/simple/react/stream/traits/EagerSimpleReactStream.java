@@ -261,9 +261,9 @@ public interface EagerSimpleReactStream<U> extends SimpleReactStream<U>,
 	default  <R> EagerSimpleReactStream<R> then(final Function<U,R> fn) {
 		if(!this.isAsync())
 			return thenSync(fn);
-		Function<Stream<CompletableFuture>,Stream<CompletableFuture>> streamMapper = s ->s.map(ft -> 
+		Function<Stream<CompletableFuture<U>>,Stream<CompletableFuture<R>>> streamMapper = s ->s.map(ft -> 
 		ft.thenApplyAsync(EagerSimpleReactStream.<U,R>handleExceptions(fn),getTaskExecutor()));
-		return (EagerSimpleReactStream<R>) this.withLastActive(getLastActive().stream(streamMapper));
+		return (EagerSimpleReactStream<R>) this.withLastActive(getLastActive().stream((Function)streamMapper));
 	}
 	
 	
@@ -367,9 +367,11 @@ public interface EagerSimpleReactStream<U> extends SimpleReactStream<U>,
 			Function<U, CompletableFuture<R>> flatFn) {
 		if(!this.isAsync())
 			return flatMapCompletableFutureSync(flatFn);
-		Function<Stream<CompletableFuture>,Stream<CompletableFuture>> streamMapper = s ->(Stream)s.map(ft -> 
+		
+		Function<Stream<CompletableFuture<U>>,Stream<CompletableFuture<R>>> streamMapper = s ->s.map(ft -> ft.thenCompose(EagerSimpleReactStream.handleExceptions(flatFn)));
+ streamMapper = s ->(Stream)s.map(ft -> 
 			ft.thenComposeAsync(EagerSimpleReactStream.handleExceptions(flatFn),getTaskExecutor()));
-		return (EagerSimpleReactStream<R>) this.withLastActive(getLastActive().stream(streamMapper));
+		return (EagerSimpleReactStream<R>) this.withLastActive(getLastActive().stream((Function)streamMapper));
 	}
 	/**
 	 * Perform a flatMap operation where the CompletableFuture type returned is flattened from the resulting Stream
@@ -392,8 +394,9 @@ public interface EagerSimpleReactStream<U> extends SimpleReactStream<U>,
 	default <R> EagerSimpleReactStream<R> flatMapCompletableFutureSync(
 			Function<U, CompletableFuture<R>> flatFn) {
 		
-		Function<Stream<CompletableFuture>,Stream<CompletableFuture>> streamMapper = s ->(Stream)s.map(ft -> ft.thenCompose(EagerSimpleReactStream.handleExceptions(flatFn)));
-		return (EagerSimpleReactStream<R>) this.withLastActive(getLastActive().stream(streamMapper));
+		Function<Stream<CompletableFuture<U>>,Stream<CompletableFuture<R>>> streamMapper = s ->s.map(ft -> ft.thenCompose(EagerSimpleReactStream.handleExceptions(flatFn)));
+streamMapper = s ->(Stream)s.map(ft -> ft.thenCompose(EagerSimpleReactStream.handleExceptions(flatFn)));
+		return (EagerSimpleReactStream<R>) this.withLastActive(getLastActive().stream((Function)streamMapper));
 	}
 
 	/**

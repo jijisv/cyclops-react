@@ -137,21 +137,24 @@ public class FastFuture<T> {
 	}
 	
 	private void completedExceptionally(Throwable t){
-
-		
+		//needs unit tests!
+//does not look right - no way to recover correctly on first exception
+		Throwable finalError = t;
 		for(int i =0;i<this.pipeline.firstRecover.length;i++){
 			try{
 				 this.set((T)pipeline.firstRecover[i].apply(t));
-				
+				 return;
 				
 			}catch(Throwable e){
+				finalError =e;
 				this.exception.lazySet(e);
 			}
 		}
-		if(exception.get()==UNSET)
+		this.completeExceptionally(finalError);
+	/**	if(exception.get()==UNSET)
 			exception.lazySet(t);
 		this.completedExceptionally=true;
-		this.done =true;
+		this.done =true;**/
 		throw (RuntimeException)exception();
 	}
 	
@@ -242,14 +245,19 @@ public class FastFuture<T> {
 			}
 		}catch(Throwable t){
 			
-			exception.lazySet(t);
-			completedExceptionally =true;
-			handleOnComplete(true);
-			done=true;
+			completeExceptionally(t);
 			
 			
 		}
 		
+	}
+	private void completeExceptionally(Throwable t) {
+		exception.lazySet(t);
+		completedExceptionally =true;
+		handleOnComplete(true);
+		if(pipeline.onFail!=null)
+			pipeline.onFail.accept(t);
+		done=true;
 	}
 	public void set(Supplier<T> result,int index){
 		try{
@@ -274,10 +282,7 @@ public class FastFuture<T> {
 				if(this.doFinally!=null)
 					doFinally.accept(this);
 			}
-			exception.lazySet(t);
-			completedExceptionally =true;
-			handleOnComplete(true);
-			done=true;
+			completeExceptionally(t);
 			
 				
 		}

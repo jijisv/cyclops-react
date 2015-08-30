@@ -1,8 +1,8 @@
 package com.aol.simple.react.stream.traits;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -48,7 +48,7 @@ public interface LazyStream<U> extends BlockingStream<U>{
 	 */
 	default void runOn(Executor e) {
 		SimpleReact reactor  = SequentialElasticPools.simpleReact.nextReactor();
-		reactor.react(() -> run(new NonCollector())).peek(n-> SequentialElasticPools.simpleReact.populate(reactor));
+		reactor.react(() -> run(new NonCollector<>())).peek(n-> SequentialElasticPools.simpleReact.populate(reactor));
 
 	}
 
@@ -92,6 +92,11 @@ public interface LazyStream<U> extends BlockingStream<U>{
 	 */
 	default <A,R> R run(Collector<U,A,R> collector) {
 
+		if(getLastActive().isSequential()){ //if single threaded we can simply push from each Future into the collection to be returned
+			A col = collector.supplier().get(); //handle null case here too!
+			forEach(r->collector.accumulator().accept(col,r));
+		
+		}
 		Optional<LazyResultConsumer<U>> batcher = collector.supplier().get() != null ? Optional
 				.of(getLazyCollector().get().withResults( new ArrayList<>())) : Optional.empty();
 
@@ -118,27 +123,42 @@ public interface LazyStream<U> extends BlockingStream<U>{
 	}
 	
 	
+	default Queue<U> collectToQueue(int bounds){
+		ManyToOneConcurrentArrayQueue<U> result = new ManyToOneConcurrentArrayQueue<>(bounds);
+		forEach(r->result.off(r));
+		return result;
+	}
+	default Queue<U> collectToQueue(){
+		ConcurrentLinkedQueue<U> result = new ConcurrentLinkedQueue<>();
+		forEach(r->result.off(r));
+		return result;
+	}
 	
 	default void forEach(Consumer<? super U> c){
 
 		
-	
-		Function<FastFuture,U> safeJoin = (FastFuture cf)->(U) BlockingStreamHelper.getSafe(cf,getErrorHandler());
-		IncrementalReducer<U> collector = new IncrementalReducer(this.getLazyCollector().get().withResults(new ArrayList<>()), this,
-				getParallelReduction());
+		EmptyCollector collector = new EmptyCollector(this.getMaxActive());
+	//	Function<FastFuture,U> safeJoin = (FastFuture cf)->(U) BlockingStreamHelper.getSafe(cf,getErrorHandler());
+	//	IncrementalReducer<U> collector = new IncrementalReducer(this.getLazyCollector().get().withResults(new ArrayList<>()), this,
+	//			getParallelReduction());
 		try {
-			this.getLastActive().injectFutures().forEach( next -> {
-
-				System.out.println(next);
-				collector.getConsumer().accept(next);
+			
+			this.getLastActive().operation(f-> f.peek(c)).injectFutures().forEach( next -> {
+				collector.accept(next);
+		//		add the forEach as a terminal function to the Future
+		//		remove parallel 'reduction' for forEach
 				
-				collector.forEach(c, safeJoin);
+				
+		//		System.out.println(next);
+		//		collector.getConsumer().accept(next);
+				
+		//		collector.forEach(c, safeJoin);
 				
 			});
 		} catch (SimpleReactProcessingException e) {
 			
 		}
-		collector.forEachResults(collector.getConsumer().getAllResults(),c, safeJoin);
+		//collector.forEachResults(collector.getConsumer().getAllResults(),c, safeJoin);
 		
 		
 

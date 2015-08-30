@@ -1,10 +1,16 @@
 package com.aol.simple.react.async.future;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import io.netty.util.internal.chmv8.ForkJoinPool;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -14,10 +20,57 @@ public class FastFutureTest {
 	
 	@Before
 	public void setup(){
+		failed=null;
 		future = new PipelineBuilder();
 		sizes = new ArrayList<>();
 		sizes2 = new ArrayList<>();
 		sizes3 = new ArrayList<>();
+	}
+	Throwable failed;
+	@Test
+	public void onFail(){
+		FastFuture f = future.onFail(t-> failed=t)
+				.thenApply(v->{throw new RuntimeException();}).build();
+			
+			f.set("boo!");
+			assertNotNull(failed);
+	}
+	@Test
+	public void onFailRecovered(){
+		FastFuture f = future.onFail(t-> failed=t)
+					.exceptionally(e-> "hello world")
+				.thenApply(v->{throw new RuntimeException();}).build();
+			
+			f.set("boo!");
+			assertThat(f.join(),equalTo("hello world"));
+	}
+	@Test
+	public void onFailNull(){
+		FastFuture f = future
+				.thenApply(v->{throw new RuntimeException();}).build();
+			
+			f.set("boo!");
+			assertNull(failed);
+	}
+	@Test
+	public void firstRecover(){
+		FastFuture f = future.exceptionally(e-> "hello world")
+			.thenApply(v->{throw new RuntimeException();}).build();
+		
+		f.set("boo!");
+		assertThat(f.join(),equalTo("hello world"));
+		
+	}
+	@Test
+	public void firstRecoverOrder(){
+		FastFuture f = future
+			.thenApply(v->{throw new RuntimeException();})
+			.exceptionally(e-> "hello world")
+			.build();
+		
+		f.set("boo!");
+		assertThat(f.join(),equalTo("hello world"));
+		
 	}
 	
 	List<Integer> sizes;
@@ -68,6 +121,231 @@ public class FastFutureTest {
 		}
 	}
 
+	boolean called=false;
+	@Test
+	public void onComplete_alreadyCompleted(){
+		called =false;
+		FastFuture f =  future
+					.<Integer,Integer>thenApply(i->i+2).build();
+		f.set(10);
+		assertTrue(f.isDone());
+		f.onComplete(event->called=true);
+		assertTrue(called);
+	}
 	
+	@Test
+	public void onComplete_notCompleted(){
+		called =false;
+		FastFuture f =  future
+					.<Integer,Integer>thenApply(i->i+2).build();
+		f.onComplete(event->called=true);
+		f.set(10);
+		assertTrue(f.isDone());
+
+		assertTrue(called);
+	}
+	@Test
+	public void essential_alreadyCompleted(){
+		called =false;
+		FastFuture f =  future
+					.<Integer,Integer>thenApply(i->i+2).build();
+		f.set(10);
+		assertTrue(f.isDone());
+		f.essential(event->called=true);
+		assertTrue(called);
+	}
+	
+	@Test
+	public void essential_notCompleted(){
+		called =false;
+		FastFuture f =  future
+					.<Integer,Integer>thenApply(i->i+2).build();
+		f.essential(event->called=true);
+		f.set(10);
+		assertTrue(f.isDone());
+
+		assertTrue(called);
+	}
+	@Test
+	public void essential_notCompleted_race() throws InterruptedException{
+		for(int i=0;i<100;i++){
+			CountDownLatch race = new CountDownLatch(1);
+			CountDownLatch init = new CountDownLatch(1);
+			called =false;
+			FastFuture f =  future
+						.<Integer,Integer>thenApply(x->x+2).build();
+			Thread t1 = new Thread ( ()->{
+							init.countDown();
+							try {
+								race.await();
+							} catch (Exception e) {
+								
+								e.printStackTrace();
+							}
+							
+							f.essential(event->called=true);});
+			t1.start();
+			race.countDown();
+			f.set(10);
+			
+			
+			t1.join();
+		assertTrue(f.isDone());
+	
+			assertTrue(called);
+		}
+		
+	}
+	@Test
+	public void essentialReversed_notCompleted_race() throws InterruptedException{
+		for(int i=0;i<100;i++){
+			CountDownLatch race = new CountDownLatch(1);
+			CountDownLatch init = new CountDownLatch(1);
+			called =false;
+			FastFuture f =  future
+						.<Integer,Integer>thenApply(x->x+2).build();
+			Thread t1 = new Thread ( ()->{
+							init.countDown();
+							try {
+								race.await();
+							} catch (Exception e) {
+								
+								e.printStackTrace();
+							}
+							
+							f.set(10);});
+			t1.start();
+			race.countDown();
+			f.essential(event->called=true);
+			
+			
+			t1.join();
+			assertTrue(f.isDone());
+	
+			assertTrue(called);
+		}
+		
+	}
+	@Test
+	public void essential_withNoPipeline_notCompleted_race() throws InterruptedException{
+		for(int i=0;i<100;i++){
+			CountDownLatch race = new CountDownLatch(1);
+			CountDownLatch init = new CountDownLatch(1);
+			called =false;
+			FastFuture f =  future
+							.build();
+			Thread t1 = new Thread ( ()->{
+							init.countDown();
+							try {
+								race.await();
+							} catch (Exception e) {
+								
+								e.printStackTrace();
+							}
+							
+							f.essential(event->called=true);});
+			t1.start();
+			race.countDown();
+			f.set(10);
+			
+			
+			t1.join();
+		assertTrue(f.isDone());
+	
+			assertTrue(called);
+		}
+		
+	}
+	@Test
+	public void onComplete_notCompleted_race() throws InterruptedException{
+		for(int i=0;i<100;i++){
+			CountDownLatch race = new CountDownLatch(1);
+			CountDownLatch init = new CountDownLatch(1);
+			called =false;
+			FastFuture f =  future
+						.<Integer,Integer>thenApply(x->x+2).build();
+			Thread t1 = new Thread ( ()->{
+							init.countDown();
+							try {
+								race.await();
+							} catch (Exception e) {
+								
+								e.printStackTrace();
+							}
+							
+							f.onComplete(event->called=true);});
+			t1.start();
+			race.countDown();
+			f.set(10);
+			
+			
+			t1.join();
+		assertTrue(f.isDone());
+	
+			assertTrue(called);
+		}
+		
+	}
+	@Test
+	public void onCompleteReversed_notCompleted_race() throws InterruptedException{
+		for(int i=0;i<100;i++){
+			CountDownLatch race = new CountDownLatch(1);
+			CountDownLatch init = new CountDownLatch(1);
+			called =false;
+			FastFuture f =  future
+						.<Integer,Integer>thenApply(x->x+2).build();
+			Thread t1 = new Thread ( ()->{
+							init.countDown();
+							try {
+								race.await();
+							} catch (Exception e) {
+								
+								e.printStackTrace();
+							}
+							
+							f.set(10);});
+			t1.start();
+			race.countDown();
+			f.onComplete(event->called=true);
+			
+			
+			
+			t1.join();
+		assertTrue(f.isDone());
+	
+			assertTrue(called);
+		}
+		
+	}
+	@Test
+	public void onCompleteWithNoPipeline_notCompleted_race() throws InterruptedException{
+		for(int i=0;i<100;i++){
+			CountDownLatch race = new CountDownLatch(1);
+			CountDownLatch init = new CountDownLatch(1);
+			called =false;
+			FastFuture f =  future
+						.build();
+			Thread t1 = new Thread ( ()->{
+							init.countDown();
+							try {
+								race.await();
+							} catch (Exception e) {
+								
+								e.printStackTrace();
+							}
+							
+							f.onComplete(event->called=true);});
+			t1.start();
+			race.countDown();
+			f.set(10);
+			
+			
+			t1.join();
+		assertTrue(f.isDone());
+	
+			assertTrue(called);
+		}
+		
+	}
 
 }

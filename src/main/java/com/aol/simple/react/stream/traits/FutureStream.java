@@ -336,7 +336,7 @@ public interface FutureStream<U> extends Seq<U>, SimpleReactStream<U>, ToQueue<U
 	default <K> Map<K, ? extends FutureStream<U>> shard(
 			Map<K, Queue<U>> shards, Function<U, K> sharder) {
 		toQueue(shards, sharder);
-		return shards
+		return (Map)shards
 				.entrySet()
 				.stream()
 				.collect(

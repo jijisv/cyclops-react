@@ -37,7 +37,9 @@ public class LazyStreamWrapper<U> implements StreamWrapper<U> {
 	}
 	
 	
-		
+	public boolean isSequential(){
+		return pipeline.isSequential();
+	}
 	
 	public Stream<FastFuture> injectFutures(){
 		FastFuture f= pipeline.build();

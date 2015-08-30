@@ -46,7 +46,8 @@ public class EmptyCollector<T> implements LazyResultConsumer<T> {
 	 */
 	@Override
 	public void accept(FastFuture<T> t) {
-		
+		if(t.isDone())
+			return;
 		
 		active.add(t);
 		

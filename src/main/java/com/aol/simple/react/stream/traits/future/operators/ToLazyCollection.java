@@ -37,8 +37,8 @@ public class ToLazyCollection {
 	  }
 	 private static final <A> Collection<A> toLazyCollection(Iterator<A> iterator,boolean concurrent) {
 	    return new AbstractCollection<A>() {
-	    	
-	    @Override  
+	    	//separate out concurrent and non-concurrent implementations to simplify things
+		    @Override  
 	    public boolean equals(Object o){
 	    	  if(o==null)
 	    		  return false;
