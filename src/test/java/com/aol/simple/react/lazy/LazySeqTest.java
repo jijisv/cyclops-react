@@ -48,7 +48,10 @@ public abstract class LazySeqTest extends BaseSeqTest {
 	}
 	@Test
     public void testCycle() {
+		for(int i=0;i<1000;i++){
+			System.out.println(i);
     	   assertEquals(asList(1, 1, 1, 1, 1,1),of(1).cycle().limit(6).toList());
+		}
       
     }
 	@Test

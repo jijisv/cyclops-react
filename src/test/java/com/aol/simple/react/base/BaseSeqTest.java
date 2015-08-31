@@ -508,6 +508,7 @@ public abstract class BaseSeqTest {
 
 	    @Test
 	    public void testZipWithIndex() {
+	    	for(int i=0;i<1000;i++){
 	        assertEquals(asList(),of().zipWithIndex().toList());
 	     //   System.out.println( of("a").zipWithIndex().toList().get(0));
 	       
@@ -515,6 +516,7 @@ public abstract class BaseSeqTest {
 	      assertEquals(asList(tuple("a", 0L)), of("a").zipWithIndex().toList());
 	     //   assertEquals(asList(tuple("a", 0L), tuple("b", 1L)), of("a", "b").zipWithIndex().toList());
 	       //assertThat(asList(tuple("a", 0L), tuple("b", 1L), tuple("c", 2L)), is(of("a", "b", "c").zipWithIndex().toList()));
+	    	}
 	    }
 
 	   

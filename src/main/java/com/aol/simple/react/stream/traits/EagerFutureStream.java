@@ -852,7 +852,7 @@ public interface EagerFutureStream<U> extends Seq<U>,FutureStream<U>, EagerSimpl
 	 */
 	@Override
 	default EagerFutureStream<U> capture(
-			final Consumer<? extends Throwable> errorHandler) {
+			final Consumer<Throwable> errorHandler) {
 		return (EagerFutureStream)EagerSimpleReactStream.super.capture(errorHandler);
 	}
 

@@ -853,7 +853,7 @@ public interface LazyFutureStream<U> extends  LazySimpleReactStream<U>,LazyStrea
 	 */
 	@Override
 	default LazyFutureStream<U> capture(
-			final Consumer<? extends Throwable> errorHandler) {
+			final Consumer<Throwable> errorHandler) {
 		return (LazyFutureStream) LazySimpleReactStream.super.capture(errorHandler);
 	}
 
@@ -1573,7 +1573,10 @@ public interface LazyFutureStream<U> extends  LazySimpleReactStream<U>,LazyStrea
 	@Override
 	default LazyFutureStream<U> cycle(){
 		RepeatableStream s = new RepeatableStream(ToLazyCollection.toLazyCollection(toQueue().stream(getSubscription()).iterator()));
-		return fromStream(Stream.iterate(s.stream(),s1-> s.stream()).flatMap(i->i));
+		System.out.println("Cycle!");
+		return (LazyFutureStream)fromStream(Stream.iterate(s.stream(),s1-> s.stream())
+								.peek(i->System.out.println("cycling!!"))
+								.flatMap(i->i).limit(6));
 	}
 	
 	/**

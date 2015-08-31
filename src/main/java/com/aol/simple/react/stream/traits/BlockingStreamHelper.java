@@ -46,7 +46,7 @@ public class BlockingStreamHelper {
 		return (R) completedFutures.stream().map(next -> getSafe(next,errorHandler))
 				.filter(v -> v != MissingValue.MISSING_VALUE).collect(collector);
 	}
-	
+	//FIXME FOR LAZYFUTURESTREAM implement as an onFail setting on the future during terminal op
 	static void capture(final Exception e,Optional<Consumer<Throwable>> errorHandler) {
 		errorHandler.ifPresent((handler) -> {
 			if (!(e.getCause() instanceof FilteredExecutionPathException)) {

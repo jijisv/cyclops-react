@@ -421,7 +421,7 @@ public interface SimpleReactStream<U> extends BlockingStream<U>{
 	 *         the dataflow
 	 */
 	@SuppressWarnings("unchecked")
-	SimpleReactStream<U> capture(final Consumer<? extends Throwable> errorHandler);
+	SimpleReactStream<U> capture(final Consumer<Throwable> errorHandler);
 	
 	
 

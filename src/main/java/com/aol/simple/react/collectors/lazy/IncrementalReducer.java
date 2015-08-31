@@ -33,59 +33,58 @@ public class IncrementalReducer<T> {
 	
 	public void forEach(Consumer<? super T> c, Function<FastFuture,T> safeJoin){
 		if(consumer.getResults().size()>config.getBatchSize()){
-			forEachResults(consumer.getResults(),c, safeJoin);
+			forEachResults(consumer.getResults(),c);
 		}
 	}
-	public void forEachResults( Collection<FastFuture<T>> results,Consumer<? super T> c,
-			Function<FastFuture, T> safeJoin) {
+	public void forEachResults( Collection<FastFuture<T>> results,Consumer<? super T> c) {
 		Stream<FastFuture<T>> stream = results.stream();//consumer.getResults().stream();
 		Stream<FastFuture<T>> streamToUse = this.config.isParallel() ? stream.parallel() : stream;
-		streamToUse.map(safeJoin).filter(v -> v != MissingValue.MISSING_VALUE).forEach(c);
+		streamToUse.map(f->f.join()).filter(v -> v != MissingValue.MISSING_VALUE).forEach(c);
 		consumer.getResults().clear();
 	}
-	public  T reduce(Function<FastFuture,T>safeJoin,T identity, BinaryOperator<T> accumulator){
+	public  T reduce(T identity, BinaryOperator<T> accumulator){
 		if(consumer.getResults().size()>config.getBatchSize()){
-			 return reduceResults(consumer.getResults(),safeJoin, identity, accumulator);
+			 return reduceResults(consumer.getResults(),identity, accumulator);
 		}
 		
 		return identity;
 	}
-	public T reduceResults( Collection<FastFuture<T>> results,Function<FastFuture, T> safeJoin, T identity,
+	public T reduceResults( Collection<FastFuture<T>> results,T identity,
 			BinaryOperator<T> accumulator) {
 		Stream<FastFuture<T>> stream = results.stream();
 		 Stream<FastFuture<T>> streamToUse = this.config.isParallel() ? stream.parallel() : stream;
-		 T result = streamToUse.map(safeJoin)
+		 T result = streamToUse.map(f->f.join())
 					.filter(v -> v != MissingValue.MISSING_VALUE).reduce(identity, accumulator);
 		consumer.getResults().clear();
 		return result;
 	}
-	public  Optional<T> reduce(Function<FastFuture,T>safeJoin, BinaryOperator<T> accumulator){
+	public  Optional<T> reduce( BinaryOperator<T> accumulator){
 		if(consumer.getResults().size()>config.getBatchSize()){
-			 return reduceResults(consumer.getResults(),safeJoin, accumulator);
+			 return reduceResults(consumer.getResults(), accumulator);
 		}
 		
 		return Optional.empty();
 	}
-	public Optional<T> reduceResults( Collection<FastFuture<T>> results,Function<FastFuture, T> safeJoin,
+	public Optional<T> reduceResults( Collection<FastFuture<T>> results,
 			BinaryOperator<T> accumulator) {
 		Stream<FastFuture<T>> stream = results.stream();
 		 Stream<FastFuture<T>> streamToUse = this.config.isParallel() ? stream.parallel() : stream;
-		 Optional<T> result = streamToUse.map(safeJoin)
+		 Optional<T> result = streamToUse.map(f->f.join())
 					.filter(v -> v != MissingValue.MISSING_VALUE).reduce( accumulator);
 		consumer.getResults().clear();
 
 		return result;
 	}
-	public <U> U reduce(Function<FastFuture,T>safeJoin,U identity, BiFunction<U,? super T,U> accumulator, BinaryOperator<U> combiner){
+	public <U> U reduce(U identity, BiFunction<U,? super T,U> accumulator, BinaryOperator<U> combiner){
 		if(consumer.getResults().size()>config.getBatchSize()){
-			 return reduceResults(consumer.getResults(),safeJoin, identity, accumulator,combiner);
+			 return reduceResults(consumer.getResults(),identity, accumulator,combiner);
 		}
 		return identity;
 	}
-	public <U> U reduceResults( Collection<FastFuture<T>> results,Function<FastFuture, T> safeJoin, U identity, BiFunction<U,? super T,U> accumulator, BinaryOperator<U> combiner){
+	public <U> U reduceResults( Collection<FastFuture<T>> results, U identity, BiFunction<U,? super T,U> accumulator, BinaryOperator<U> combiner){
 		Stream<FastFuture<T>> stream = results.stream();
 		 Stream<FastFuture<T>> streamToUse = this.config.isParallel() ? stream.parallel() : stream;
-		 U result = streamToUse.map(safeJoin)
+		 U result = streamToUse.map(f->f.join())
 					.filter(v -> v != MissingValue.MISSING_VALUE).reduce(identity, accumulator,combiner);
 		consumer.getResults().clear();
 		return result;

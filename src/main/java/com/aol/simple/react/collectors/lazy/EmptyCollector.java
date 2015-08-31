@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import lombok.AllArgsConstructor;
@@ -22,22 +21,22 @@ import com.aol.simple.react.config.MaxActive;
  * @param <T>
  */
 @Wither
-@AllArgsConstructor
+//@AllArgsConstructor
 public class EmptyCollector<T> implements LazyResultConsumer<T> {
 	
 
 	private final List<FastFuture<T>> active = new ArrayList<>();
 	@Getter
 	private final MaxActive maxActive;
-	private final Function<FastFuture, T> safeJoin;
+//	private final Function<FastFuture, T> safeJoin; //FIXME Doesn't look like a safejoin!
 	
 	EmptyCollector(){
 		maxActive = MaxActive.defaultValue.factory.getInstance();
-		safeJoin = cf -> (T)cf.join();
+		//safeJoin = cf -> (T)cf.join();
 	}
-	EmptyCollector(MaxActive maxActive){
+	public EmptyCollector(MaxActive maxActive){
 		this.maxActive = maxActive;
-		safeJoin = cf -> (T)cf.join();
+	//	this.safeJoin = safeJoin;//cf -> (T)cf.join();
 	}
 	
 	/* 
@@ -46,8 +45,12 @@ public class EmptyCollector<T> implements LazyResultConsumer<T> {
 	 */
 	@Override
 	public void accept(FastFuture<T> t) {
-		
-		
+		if(t.isDone()){
+		//	if(t.isCompletedExceptionally())
+		//		handleExceptions(t);
+			return;
+		}
+		System.out.println("Not done!");
 		active.add(t);
 		
 		if(active.size()>maxActive.getMaxActive()){
@@ -64,8 +67,8 @@ public class EmptyCollector<T> implements LazyResultConsumer<T> {
 				active.removeAll(toRemove);
 				if(active.size()>maxActive.getReduceTo()){
 					CompletableFuture promise=  new CompletableFuture();
-					FastFuture.xOf(active.size()-maxActive.getReduceTo(),active.toArray(new FastFuture[0]))
-									.onComplete(cf -> promise.complete(true));
+					FastFuture.xOf(active.size()-maxActive.getReduceTo(),() -> promise.complete(true),
+										active.toArray(new FastFuture[0]));
 					
 					promise.join();
 				}
@@ -79,8 +82,9 @@ public class EmptyCollector<T> implements LazyResultConsumer<T> {
 	}
 
 	private void handleExceptions(FastFuture cf){
-		if(cf.isCompletedExceptionally())
-			 safeJoin.apply(cf);
+		if(cf.isCompletedExceptionally()){
+			// safeJoin.apply(cf);
+		}
 	}
 	
 	@Override
@@ -95,7 +99,7 @@ public class EmptyCollector<T> implements LazyResultConsumer<T> {
 	 */
 	@Override
 	public Collection<FastFuture<T>> getResults() {
-		active.stream().forEach(cf ->  safeJoin.apply(cf));
+	//	active.stream().forEach(cf ->  safeJoin.apply(cf));
 		active.clear();
 		return new ArrayList<>();
 	}

@@ -767,7 +767,7 @@ public interface EagerSimpleReactStream<U> extends SimpleReactStream<U>,
 	 *         the dataflow
 	 */
 	@SuppressWarnings("unchecked")
-	default EagerSimpleReactStream<U> capture(final Consumer<? extends Throwable> errorHandler) {
+	default EagerSimpleReactStream<U> capture(final Consumer<Throwable> errorHandler) {
 		return (EagerSimpleReactStream)this.withErrorHandler(Optional
 				.of((Consumer<Throwable>) errorHandler));
 	}

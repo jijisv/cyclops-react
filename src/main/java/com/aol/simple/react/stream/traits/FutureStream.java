@@ -652,7 +652,7 @@ public interface FutureStream<U> extends Seq<U>, SimpleReactStream<U>, ToQueue<U
 	 FutureStream<U> filter(final Predicate<? super U> p) ;
 	 FutureStream<U> peek(final Consumer<? super U> consumer);
 
-	 FutureStream<U> capture(final Consumer<? extends Throwable> errorHandler);
+	 FutureStream<U> capture(final Consumer<Throwable> errorHandler);
 	/**
 	 * Stream supporting methods
 	 */
