@@ -100,9 +100,13 @@ public class XorTest {
     }
 	@Test
     public void applicativePStack(){
+	    
         Xor<String,String> fail1 =  Xor.secondary("failed1");
-        Xor<PStackX<String>,String> result = fail1.apToList(Xor.<String,String>secondary("failed2"),(a,b)->a+b);
+        Xor<PStackX<String>,String> result = fail1.apToList(Xor.<String,String>secondary("failed2"),(a,b)->a+b)
+                                                  .ap(Xor.primary("success").list(), (a,b)->a+b);
         assertThat(result.secondaryGet(),equalTo(PStackX.of("failed1","failed2")));
+        
+        
     }
 	
 

@@ -1,57 +1,72 @@
-package com.aol.cyclops.internal.comprehensions.comprehenders.transformers.seq;
+public interface ForFlux {
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
+		static <T1, T2, T3, R1, R2, R3, R> Flux<R> each4(Flux<? extends T1> value1,
+				Function<? super T1, ? extends Flux<R1>> value2,
+				BiFunction<? super T1, ? super R1, ? extends Flux<R2>> value3,
+				TriFunction<? super T1, ? super R1, ? super R2, ? extends Flux<R3>> value4,
+				QuadFunction<? super T1, ? super R1, ? super R2, ? super R3, ? extends R> yieldingFunction) {
 
-import com.aol.cyclops.control.ReactiveSeq;
-import com.aol.cyclops.control.monads.transformers.seq.StreamTSeq;
-import com.aol.cyclops.internal.comprehensions.comprehenders.MaterializedList;
-import com.aol.cyclops.types.extensability.Comprehender;
-import com.aol.cyclops.types.mixins.Printable;
+			return AnyM.ofSeq(For.anyM(flux(value1)).anyM(a -> flux(value2.apply(a))).anyM(a -> b -> flux(value3.apply(a, b)))
+							.anyM(a -> b -> c -> flux(value4.apply(a, b, c))).yield4(yieldingFunction).unwrap())
+					.unwrap();
 
+		}
 
+		static <T1, T2, T3, R1, R2, R3, R> Flux<R> each4(Flux<? extends T1> value1,
+				Function<? super T1, ? extends Flux<R1>> value2,
+				BiFunction<? super T1, ? super R1, ? extends Flux<R2>> value3,
+				TriFunction<? super T1, ? super R1, ? super R2, ? extends Flux<R3>> value4,
+				QuadFunction<? super T1, ? super R1, ? super R2, ? super R3, Boolean> filterFunction,
+				QuadFunction<? super T1, ? super R1, ? super R2, ? super R3, ? extends R> yieldingFunction) {
 
-public class StreamTSeqComprehender implements Comprehender<StreamTSeq>, Printable{
-	
-	@Override
-	public Object resolveForCrossTypeFlatMap(Comprehender comp, StreamTSeq apply) {
-	    List list = (List) apply.stream().collect(Collectors.toCollection(MaterializedList::new));
-        return list.size()>0 ? comp.of(list) : comp.empty();
-     }
-	@Override
-    public Object filter(StreamTSeq t, Predicate p){
-        return t.filter(p);
-    }
-	@Override
-	public Object map(StreamTSeq t, Function fn) {
-		return t.map(r->fn.apply(r));
+			return AnyM.ofSeq(For.anyM(flux(value1)).anyM(a -> flux(value2.apply(a)))
+					.anyM(a -> b -> flux(value3.apply(a, b))).anyM(a -> b -> c -> flux(value4.apply(a, b, c)))
+					.filter(a -> b -> c -> d -> filterFunction.apply(a, b, c, d)).yield4(yieldingFunction).unwrap())
+					.unwrap();
+
+		}
+
+		static <T1, T2, R1, R2, R> Flux<R> each3(Flux<? extends T1> value1,
+				Function<? super T1, ? extends Flux<R1>> value2,
+				BiFunction<? super T1, ? super R1, ? extends Flux<R2>> value3,
+				TriFunction<? super T1, ? super R1, ? super R2, ? extends R> yieldingFunction) {
+
+			return AnyM.ofSeq(For.anyM(flux(value1)).anyM(a -> flux(value2.apply(a)))
+					.anyM(a -> b -> flux(value3.apply(a, b))).yield3(yieldingFunction).unwrap()).unwrap();
+			
+
+		}
+
+		static <T1, T2, R1, R2, R> Flux<R> each3(Flux<? extends T1> value1,
+				Function<? super T1, ? extends Flux<R1>> value2,
+				BiFunction<? super T1, ? super R1, ? extends Flux<R2>> value3,
+				TriFunction<? super T1, ? super R1, ? super R2, Boolean> filterFunction,
+				TriFunction<? super T1, ? super R1, ? super R2, ? extends R> yieldingFunction) {
+
+			return AnyM
+					.ofSeq(For.anyM(flux(value1)).anyM(a -> flux(value2.apply(a))).anyM(a -> b -> flux(value3.apply(a, b)))
+							.filter(a -> b -> c -> filterFunction.apply(a, b, c)).yield3(yieldingFunction).unwrap())
+					.unwrap();
+			
+
+		}
+
+		static <T, R1, R> Flux<R> each2(Flux<? extends T> value1, Function<? super T, Flux<R1>> value2,
+				BiFunction<? super T, ? super R1, ? extends R> yieldingFunction) {
+
+			return AnyM.ofSeq(For.anyM(flux(value1)).anyM(a -> flux(value2.apply(a))).yield2(yieldingFunction).unwrap())
+					.unwrap();
+			
+
+		}
+
+		static <T, R1, R> Flux<R> each2(Flux<? extends T> value1, Function<? super T, ? extends Flux<R1>> value2,
+				BiFunction<? super T, ? super R1, Boolean> filterFunction,
+				BiFunction<? super T, ? super R1, ? extends R> yieldingFunction) {
+
+			return AnyM.ofSeq(For.anyM(flux(value1)).anyM(a -> flux(value2.apply(a)))
+					.filter(a -> b -> filterFunction.apply(a, b)).yield2(yieldingFunction).unwrap()).unwrap();
+			
+
+		}
 	}
-
-	@Override
-	public Object flatMap(StreamTSeq t, Function fn) {
-		return t.flatMapT(r->fn.apply(r));
-	}
-
-	@Override
-	public StreamTSeq of(Object o) {
-		return StreamTSeq.of(ReactiveSeq.of(o));
-	}
-
-	@Override
-	public StreamTSeq empty() {
-		return StreamTSeq.emptyStream();
-	}
-
-	@Override
-	public Class getTargetClass() {
-		return StreamTSeq.class;
-	}
-    @Override
-    public StreamTSeq fromIterator(Iterator o) {
-        return StreamTSeq.of(ReactiveSeq.fromIterable(()->o));
-    }
-
-}

@@ -300,7 +300,7 @@ public interface Xor<ST,PT> extends Supplier<PT>,
      */
     default <T2, R> Xor<ST,R> ap(Xor<? extends ST,? extends T2> app, BinaryOperator<ST> semigroup,BiFunction<? super PT, ? super T2, ? extends R> fn){
         return this.visit(secondary-> app.visit(s2->Xor.secondary( semigroup.apply(s2, secondary)), p2->Xor.secondary(secondary))
-                    , primary->   app.visit(s2->Xor.secondary(s2), p2->Xor.primary(fn.apply(primary,p2))));
+                          ,primary->   app.visit(s2->Xor.secondary(s2), p2->Xor.primary(fn.apply(primary,p2))));
       }
     
 	

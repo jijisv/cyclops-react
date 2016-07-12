@@ -177,7 +177,7 @@ public class EvalTSeq<T> implements EvalT<T>,
     @Override
     public AnyMSeq<? extends Traversable<T>> transformerStream() {
        
-        return AnyM.fromList(ListX.of(stream().peek(System.out::println)));
+        return AnyM.fromList(ListX.of(stream()));
     }
 
     /**

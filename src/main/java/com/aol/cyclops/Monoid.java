@@ -2,7 +2,6 @@ package com.aol.cyclops;
 
 
 import java.util.function.BiFunction;
-import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
