@@ -36,6 +36,7 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import com.aol.cyclops.internal.stream.spliterators.RecoverSpliterator;
 import org.jooq.lambda.Collectable;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.tuple.Tuple2;
@@ -204,7 +205,7 @@ public class ReactiveSeqImpl<T> implements Unwrapable, ReactiveSeq<T>, Iterable<
 
     }
 
-    
+
     @Override
     public final ReactiveSeq<T> cycleWhile(final Predicate<? super T> predicate) {
 
@@ -296,7 +297,7 @@ public class ReactiveSeqImpl<T> implements Unwrapable, ReactiveSeq<T>, Iterable<
     @Override
     public final <U> ReactiveSeq<U> scanLeft(final U seed, final BiFunction<? super U, ? super T, ? extends U> function) {
 
-        
+
         return StreamUtils.reactiveSeq(Stream.concat(Stream.of(seed), StreamSupport.stream(new ScanLeftSpliterator<T,U>(this.stream.spliterator(),
                                         seed,function),false)),reversable);
 
@@ -1025,18 +1026,13 @@ public class ReactiveSeqImpl<T> implements Unwrapable, ReactiveSeq<T>, Iterable<
 
     @Override
     public ReactiveSeq<T> recover(final Function<Throwable, ? extends T> fn) {
-        return StreamUtils.reactiveSeq(StreamUtils.recover(stream, fn), this.reversable);
+        return recover(Throwable.class, fn);
     }
 
     @Override
     public <EX extends Throwable> ReactiveSeq<T> recover(final Class<EX> exceptionClass, final Function<EX, ? extends T> fn) {
-        return StreamUtils.reactiveSeq(StreamUtils.recover(stream, exceptionClass, fn), this.reversable);
+        return StreamUtils.reactiveSeq(StreamUtils.stream(new RecoverSpliterator<T, EX>(this.spliterator(), fn, exceptionClass)), this.reversable);
     }
-    
-
-  
- 
-    
 
     @Override
     public <X extends Throwable> Subscription forEachX(final long numberOfElements, final Consumer<? super T> consumer) {
